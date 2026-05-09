@@ -1,0 +1,5 @@
+pre
+##SASEO^
+export N=1
+##SASEO$
+suffix

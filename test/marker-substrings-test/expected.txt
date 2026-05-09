@@ -1,0 +1,5 @@
+echo "##SASEO^"
+echo "##SASEO$"
+##SASEO^
+export N=1
+##SASEO$

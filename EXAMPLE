@@ -1,0 +1,4 @@
+saseo ~/.bashrc <<'EOF'
+export FOO=foo
+export BAR=bar
+EOF
