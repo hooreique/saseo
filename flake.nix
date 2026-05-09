@@ -26,10 +26,6 @@
             default = saseo;
           };
 
-          checks = {
-            saseo = saseo;
-          };
-
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.nushell
@@ -37,6 +33,8 @@
               pkgs.scdoc
             ];
           };
+
+          checks.saseo = saseo;
 
           formatter = pkgs.nufmt;
         };
