@@ -1,0 +1,6 @@
+# profile init
+export BASE=1
+##SASEO^
+export X=baz
+export Z=qux
+##SASEO$

@@ -1,0 +1,3 @@
+##SASEO^
+export N=1
+##SASEO$
