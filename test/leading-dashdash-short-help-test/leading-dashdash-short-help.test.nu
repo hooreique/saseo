@@ -2,7 +2,7 @@
 let root = ($env.FILE_PWD | path join ../..)
 def main [] {
     let saseo = ($root | path join saseo.nu)
-    let result = do { ^nu $saseo -- -h } | complete
+    let result = with-env { NO_COLOR: "1" } { ^nu $saseo -- -h } | complete
     if ($result.exit_code | into string) != "0" {
         print "not ok - leading dashdash short help exit code"
         print "expected:"

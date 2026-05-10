@@ -3,7 +3,7 @@ let root = ($env.FILE_PWD | path join ../..)
 def main [] {
     let saseo = ($root | path join saseo.nu)
     let expected_example = (open --raw ($root | path join EXAMPLE))
-    let result = do { ^nu $saseo -h } | complete
+    let result = with-env { NO_COLOR: "1" } { ^nu $saseo -h } | complete
     if ($result.exit_code | into string) != "0" {
         print "not ok - short help exit code"
         print "expected:"
@@ -14,10 +14,12 @@ def main [] {
     }
     print "ok - short help exit code"
     for check in [
+        {name: "short help description", text: "saseo adds and removes small rc snippets that should stick around for a while,\nbut not forever."}
         {name: "short help stdout", text: "Usage:"}
-        {name: "short help includes dry-run option", text: "  --dry-run"}
+        {name: "short help includes dry-run option", text: "  --dry-run          Validate and print the same success output without writing"}
         {name: "short help includes man hint", text: "  man saseo"}
-        {name: "short help includes example heading", text: "Example:"}
+        {name: "short help includes examples heading", text: "Examples:"}
+        {name: "short help includes remove example", text: "saseo --rm ~/.bashrc"}
         {
             name: "short help includes example file"
             text: $expected_example

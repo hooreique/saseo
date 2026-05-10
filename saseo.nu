@@ -43,25 +43,47 @@ def fail [
     }
     exit $code
 }
+def color_enabled [] {
+    let no_color = ($env.NO_COLOR? | default "")
+    $no_color == "" and (is-terminal --stdout)
+}
+def color_text [enabled: bool, code: string, text: string] {
+    if $enabled {
+        $"(ansi $code)($text)(ansi reset)"
+    } else {
+        $text
+    }
+}
 def usage [] {
-    print "Usage:"
+    let color = (color_enabled)
+    let heading = {|text| color_text $color "cyan_bold" $text }
+    let opt = {|text| color_text $color "green" $text }
+    print "saseo adds and removes small rc snippets that should stick around for a while,"
+    print "but not forever."
+    print ""
+    print (do $heading "Usage:")
     print "  saseo [--dry-run] [--marker MARKER] [--] FILE"
     print "  saseo --rm [--dry-run] [--marker MARKER] [--] FILE"
-    print "  saseo --help"
-    print "  saseo --version"
     print ""
-    print "Options:"
-    print "  -h, --help"
-    print "  -V, --version"
-    print "  --dry-run"
-    print "  --marker MARKER    default: SASEO"
-    print "  --rm"
-    print ""
-    print "More details:"
-    print "  man saseo"
-    print ""
-    print "Example:"
+    print (do $heading "Examples:")
     print (open --raw ($env.FILE_PWD | path join EXAMPLE) | str trim --right)
+    print ""
+    print "saseo --rm ~/.bashrc"
+    print ""
+    print (do $heading "Options:")
+    let dry_run = (do $opt "--dry-run")
+    let marker = (do $opt "--marker MARKER")
+    let rm = (do $opt "--rm")
+    let help = (do $opt "-h, --help")
+    let version = (do $opt "-V, --version")
+    print $"  ($dry_run)          Validate and print the same success output without writing"
+    print $"  ($marker)    Use marker name MARKER; default: SASEO"
+    print $"  ($rm)               Remove the managed block instead of adding or replacing it"
+    print $"  ($help)         Show help"
+    print $"  ($version)      Show version"
+    print ""
+    print (do $heading "More details:")
+    print "  man saseo"
 }
 def version [] {
     open --raw ($env.FILE_PWD | path join VERSION) | str trim

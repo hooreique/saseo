@@ -53,7 +53,8 @@ line endings are rejected.
 	ignored.
 
 *-h*, *--help*
-	Print help.
+	Print help. When stdout is a terminal, section headings and option names
+	may be colored. Set *NO_COLOR* to disable color.
 
 *-V*, *--version*
 	Print the version.

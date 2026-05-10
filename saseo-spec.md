@@ -27,8 +27,12 @@ keeps forms such as `saseo -- --version` working.
 
 `-V` and `--version` print the version from the `VERSION` file.
 
-`-h` and `--help` print usage, options, a `man saseo` details hint, and the
-example from the `EXAMPLE` file.
+`-h` and `--help` print a short description, usage, examples, options, and a
+`man saseo` details hint. The examples include the content of the `EXAMPLE`
+file.
+
+When stdout is a terminal and `NO_COLOR` is empty, help may use minimal ANSI
+color on section headings and option names.
 
 `--dry-run` runs the same validation and computes the same success output as a
 normal add, replace, or remove operation, but does not write or rename the target
