@@ -18,34 +18,41 @@ Enter the development shell:
 nix develop
 ```
 
+Enter the lint shell with packaged `staticcheck` and `gosec`:
+
+```bash
+nix develop .#lint
+```
+
 Run the program from source:
 
 ```bash
-nix develop --command -- nu saseo.nu --help
+nix develop --command -- go run . --help
 ```
 
-Build the package:
+Build the package. This runs the Go format check, tests, staticcheck, gosec,
+and install checks:
 
 ```bash
 nix build
 ```
 
-Format Nushell files:
+Format Go and Nix files:
 
 ```bash
 nix fmt
 ```
 
-Or directly:
+Or format Go files directly:
 
 ```bash
-nix develop --command -- nufmt
+nix develop --command -- gofmt -w .
 ```
 
 Run tests directly:
 
 ```bash
-nix develop --command -- nu test/saseo-test.nu
+nix develop --command -- go test ./...
 ```
 
 ## Change Coordination
@@ -55,11 +62,14 @@ check whether the others must change too.
 
 Keep these in sync:
 
-- `saseo.nu`
+- `main.go`
+- `main_test.go`
+- `go.mod`
+- `go.sum`
 - `saseo-spec.md`
 - `saseo.1.scd`
 - `README.md`
-- `test/**/*.nu`
+- `test/*`
 - `package.nix`
 - `flake.nix`
 
@@ -72,11 +82,11 @@ Behavioral spec sections in `saseo-spec.md` should have stable IDs in their
 headings, such as `[SASEO-ADD-REPLACE]`.
 
 Tests should point back to the behavior they cover with a top-of-file
-`# Spec:` comment listing the relevant spec IDs. Keep this reference
+`// Spec:` comment listing the relevant spec IDs. Keep this reference
 one-directional: tests may reference the spec, but the spec should not list
 test paths or implementation details.
 
-When changing behavior, update affected spec IDs and test `# Spec:` comments
+When changing behavior, update affected spec IDs and test `// Spec:` comments
 in the same change.
 
 ## Exit Code Policy
@@ -88,21 +98,18 @@ classified by `saseo`. Leave `2` unused.
 
 ## Test Organization
 
-The test runner is `test/saseo-test.nu`. It discovers and runs immediate
-`test/*-test/*.test.nu` files in sorted order.
+The test runner is Go's standard test runner:
 
-Each `*-test/` directory is a test item. Keep the Nushell test script and all
-files needed by that item in the same directory. Do not add shared test helpers;
-each test item should compute paths, prepare targets, and perform assertions
-itself.
+```bash
+go test ./...
+```
 
-Test runs should create scratch files in the test item directory unless there
-is a specific reason to use another location. Prefer scratch file names that
-match `*.temp.txt`, which are ignored by `test/.gitignore`. If a test needs
-some other intermediate file name, add a `.gitignore` to that test item
-directory so every such intermediate artifact remains untracked. A scratch file
-may be left behind after a failed test. Tests must reset scratch targets from
-their local tracked inputs before relying on their contents.
+CLI scenario tests live in `main_test.go`. Read-only fixture files live flat in
+`test/`, using `<scenario>-input.txt` and `<scenario>-expected.txt` names.
+
+Test runs should create scratch files with `t.TempDir()` unless there is a
+specific reason to write somewhere else. Do not leave generated test artifacts
+in `test/`.
 
 ## Error Output Test Conventions
 
@@ -111,7 +118,7 @@ not the exact prose.
 
 For classified failures:
 
-- include `SASEO-ERROR-OUTPUT` in the test's top-of-file `# Spec:` comment,
+- include `SASEO-ERROR-OUTPUT` in the test's top-of-file `// Spec:` comment,
 - assert that stderr is not empty,
 - assert that the first stderr line starts with `error: ` and has text after
   the prefix,

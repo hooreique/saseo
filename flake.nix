@@ -1,5 +1,5 @@
 {
-  description = "saseo adds and removes small rc snippets that should stick around for a while, but not forever.";
+  description = "bash-aware block management for shell rc files";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -19,6 +19,15 @@
         { pkgs, ... }:
         let
           saseo = pkgs.callPackage ./package.nix { };
+          devPackages = [
+            pkgs.go
+            pkgs.nixfmt
+            pkgs.scdoc
+          ];
+          lintPackages = [
+            pkgs.go-tools
+            pkgs.gosec
+          ];
         in
         {
           packages = {
@@ -26,17 +35,29 @@
             default = saseo;
           };
 
-          devShells.default = pkgs.mkShell {
-            packages = [
-              pkgs.nushell
-              pkgs.nufmt
-              pkgs.scdoc
-            ];
+          devShells = {
+            default = pkgs.mkShell {
+              packages = devPackages;
+            };
+
+            lint = pkgs.mkShell {
+              packages = devPackages ++ lintPackages;
+            };
           };
 
           checks.saseo = saseo;
 
-          formatter = pkgs.nufmt;
+          formatter = pkgs.writeShellApplication {
+            name = "saseo-fmt";
+            runtimeInputs = [
+              pkgs.go
+              pkgs.nixfmt
+            ];
+            text = ''
+              gofmt -w .
+              nixfmt flake.nix package.nix
+            '';
+          };
         };
     };
 }

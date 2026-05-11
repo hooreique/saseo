@@ -1,31 +1,43 @@
 {
   lib,
-  stdenvNoCC,
-  makeWrapper,
+  buildGoModule,
+  go-tools,
+  gosec,
   installShellFiles,
-  nushell,
-  nufmt,
   scdoc,
 }:
 
-stdenvNoCC.mkDerivation {
+buildGoModule {
   pname = "saseo";
   version = lib.fileContents ./VERSION;
 
-  src = ./.;
+  src = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./VERSION
+      ./go.mod
+      ./go.sum
+      ./main.go
+      ./main_test.go
+      ./saseo.1.scd
+      ./test
+    ];
+  };
+
+  vendorHash = "sha256-tCFu9E2pFBWBQFiRVvI16FNI3dE1bUKJlsEbvDAo7lo=";
 
   nativeBuildInputs = [
-    makeWrapper
     installShellFiles
-    nushell
-    nufmt
     scdoc
   ];
 
-  buildPhase = ''
-    runHook preBuild
+  nativeCheckInputs = [
+    go-tools
+    gosec
+  ];
+
+  postBuild = ''
     scdoc < saseo.1.scd > saseo.1
-    runHook postBuild
   '';
 
   doCheck = true;
@@ -33,39 +45,24 @@ stdenvNoCC.mkDerivation {
   checkPhase = ''
     runHook preCheck
 
-    nu_files="$(find test -name '*.nu' -type f | sort)"
-    for file in saseo.nu $nu_files; do
-      formatted="$(mktemp)"
-      nufmt --stdin < "$file" > "$formatted"
-      if ! cmp -s "$file" "$formatted"; then
-        echo "$file is not formatted" >&2
-        diff -u "$file" "$formatted" >&2 || true
-        exit 1
-      fi
-    done
+    export HOME="$TMPDIR"
 
-    nu --ide-check 0 saseo.nu > /dev/null
-    for file in $nu_files; do
-      nu --ide-check 0 "$file" > /dev/null
-    done
+    gofmt_files="$(gofmt -l .)"
+    if [ -n "$gofmt_files" ]; then
+      echo "Go files are not formatted:" >&2
+      echo "$gofmt_files" >&2
+      exit 1
+    fi
 
-    nu test/saseo-test.nu
+    go test ./...
+    staticcheck ./...
+    gosec -quiet ./...
 
     runHook postCheck
   '';
 
-  installPhase = ''
-    runHook preInstall
-
-    install -Dm644 saseo.nu $out/share/saseo/saseo.nu
-    install -Dm644 VERSION $out/share/saseo/VERSION
-    install -Dm644 EXAMPLE $out/share/saseo/EXAMPLE
+  postInstall = ''
     installManPage saseo.1
-    mkdir -p $out/bin
-    makeWrapper ${nushell}/bin/nu $out/bin/saseo \
-      --add-flags "$out/share/saseo/saseo.nu"
-
-    runHook postInstall
   '';
 
   doInstallCheck = true;
@@ -75,13 +72,17 @@ stdenvNoCC.mkDerivation {
 
     $out/bin/saseo --help > /dev/null
     $out/bin/saseo --version > /dev/null
+    $out/bin/saseo put --help > /dev/null
+    $out/bin/saseo mark --help > /dev/null
+    $out/bin/saseo rm --help > /dev/null
+    $out/bin/saseo show --help > /dev/null
     test -s "$out/share/man/man1/saseo.1" || test -s "$out/share/man/man1/saseo.1.gz"
 
     runHook postInstallCheck
   '';
 
   meta = {
-    description = "saseo adds and removes small rc snippets that should stick around for a while, but not forever.";
+    description = "bash-aware block management for shell rc files";
     license = lib.licenses.mit;
     mainProgram = "saseo";
   };
