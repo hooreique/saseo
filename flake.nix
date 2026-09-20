@@ -29,6 +29,10 @@
         );
     in
     {
+      overlays.default = final: prev: {
+        saseo = final.callPackage ./package.nix { };
+      };
+
       packages = forAllSys (
         { saseo, ... }:
         {
