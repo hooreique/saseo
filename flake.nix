@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
-    { nixpkgs, ... }:
+    { self, nixpkgs, ... }:
     let
       forAllSys =
         perSys:
@@ -31,6 +31,10 @@
     {
       overlays.default = final: prev: {
         saseo = final.callPackage ./package.nix { };
+      };
+
+      overlays.pinned = final: prev: {
+        saseo = self.packages.${final.stdenv.hostPlatform.system}.default;
       };
 
       packages = forAllSys (
